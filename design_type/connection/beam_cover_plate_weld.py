@@ -184,7 +184,8 @@ class BeamCoverPlateWeld(MomentConnection):
                KEY_DP_DETAILING_GAP: '3',
                KEY_DP_DETAILING_CORROSIVE_INFLUENCES: 'No',
                KEY_DP_DESIGN_METHOD: "Limit State Design",
-               KEY_CONNECTOR_MATERIAL: str(design_dictionary[KEY_MATERIAL])
+               KEY_CONNECTOR_MATERIAL: str(design_dictionary[KEY_MATERIAL]),
+               KEY_DP_WELD_MATERIAL_G_O:fu
                }[key]
 
         return val

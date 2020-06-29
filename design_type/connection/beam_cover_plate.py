@@ -470,7 +470,14 @@ class BeamCoverPlate(MomentConnection):
         t5 = (
         KEY_OUT_BOLT_BEARING, KEY_OUT_DISP_BOLT_BEARING, TYPE_TEXTBOX, bolt_bearing_capacity_disp if flag else '', True)
         flange_bolt_capacity.append(t5)
-        t5 = (KEY_REDUCTION_FACTOR_FLANGE,KEY_DISP_REDUCTION_FACTOR_FLANGE,TYPE_TEXTBOX, round(self.flange_plate.beta_lj, 2) if flag else '', True)
+        if self.flange_plate.beta_lj > 0:
+            self.flange_plate.beta_lj = round(self.flange_plate.beta_lj, 2)
+        else:
+            self.flange_plate.beta_lj = 1
+
+
+        t5 = (KEY_REDUCTION_FACTOR_FLANGE,KEY_DISP_REDUCTION_FACTOR_FLANGE,TYPE_TEXTBOX,
+              round(self.flange_plate.beta_lj, 2) if flag else '', True)
         flange_bolt_capacity.append(t5)
         t13 = (KEY_OUT_BOLT_CAPACITY, KEY_OUT_DISP_BOLT_CAPACITY, TYPE_TEXTBOX,
                round(self.flange_plate.bolt_capacity_red / 1000, 2) if flag else '', True)
@@ -512,6 +519,12 @@ class BeamCoverPlate(MomentConnection):
         t5 = (KEY_OUT_BOLT_BEARING, KEY_OUT_DISP_BOLT_BEARING, TYPE_TEXTBOX, webbolt_bearing_capacity_disp if flag else '',
             True)
         web_bolt_capacity.append(t5)
+        if self.web_plate.beta_lj > 0:
+            self.web_plate.beta_lj =round(self.web_plate.beta_lj, 2)
+        else:
+            self.web_plate.beta_lj = 1
+
+
         t5 = (KEY_REDUCTION_FACTOR_WEB, KEY_DISP_REDUCTION_FACTOR_WEB, TYPE_TEXTBOX,
               round(self.web_plate.beta_lj, 2) if flag else '', True)
         web_bolt_capacity.append(t5)
