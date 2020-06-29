@@ -882,6 +882,7 @@ class BeamCoverPlate(MomentConnection):
 
         ############################# Shear Capacity  # N############################
         # TODO: Review by anjali. limit shear capacity to 0.6 times
+
         self.shear_capacity1 = round(((self.section.depth - (2 * self.section.flange_thickness)) *
                                       self.section.web_thickness * self.section.fy * 0.6) / (
                                                  math.sqrt(3) * gamma_m0),
@@ -2084,8 +2085,18 @@ class BeamCoverPlate(MomentConnection):
         A_vn_web = 2 * (self.web_plate.height - (self.web_plate.bolts_one_line * self.web_bolt.dia_hole)) * \
                    self.web_plate.thickness_provided
         A_v_web = 2 * self.web_plate.height * self.web_plate.thickness_provided
-        self.web_plate.shear_yielding_capacity = self.shear_yielding(
-            A_v=A_v_web, fy=self.web_plate.fy)
+        self.web_plate.shear_yielding_capacity = round(0.6*self.shear_yielding(
+            A_v=A_v_web, fy=self.web_plate.fy),2)
+        if self.web_plate.shear_yielding_capacity < self.fact_shear_load:
+            self.design_status = False
+            logger.warning(": Allowable shear capacity of web plate is less than required factored shear load {} kN.".format(
+                round(self.fact_shear_load / 1000, 2)))
+            logger.info(": Increase the thickness of the web plate or  decrease the applied shear loads")
+            logger.error(" : Design is not safe. \n ")
+            logger.debug(" : =========End Of design===========")
+        else:
+            pass
+
         self.web_plate.shear_rupture_capacity = self.shear_rupture_(
             A_vn=A_vn_web, fu=self.web_plate.fu)
         design_status_block_shear = False
@@ -2128,10 +2139,10 @@ class BeamCoverPlate(MomentConnection):
         #     break
 
         if design_status_block_shear is True:
-            self.web_plate.shear_capacity_web_plate = min(self.web_plate.shear_yielding_capacity,
+            self.web_plate.shear_capacity_web_plate = round(0.6 *min(self.web_plate.shear_yielding_capacity,
                                                           self.web_plate.shear_rupture_capacity,
-                                                          self.web_plate.block_shear_capacity_shear)
-
+                                                          self.web_plate.block_shear_capacity_shear),2)
+            # self.allowable_web_shear_cap = round(0.6 *self.web_plate.shear_capacity_web_plate,2)
             if self.web_plate.shear_capacity_web_plate  < self.fact_shear_load:
                 # self.web_shear_plate_check_status = False
                 if len(self.web_plate.thickness) >= 2:
@@ -2143,8 +2154,8 @@ class BeamCoverPlate(MomentConnection):
                 else:
                     self.web_shear_plate_check_status = False
                     self.design_status = False
-                    logger.warning(": Shear capacity of web plate is less than required fact_shear_load {} kN.".format( round(self.fact_shear_load/1000 ,2)))
-                    logger.info(": Increase the thickness of the web plate or  decrease the applied shear loads")
+                    logger.warning(": Shear capacity of web plate is less than required factored shear load {} kN.".format( round(self.fact_shear_load/1000 ,2)))
+                    logger.info(": Increase the thickness of the web plate or decrease the applied shear loads")
                     logger.error(" : Design is not safe. \n ")
                     logger.debug(" : =========End Of design===========")
             else:
@@ -2155,7 +2166,7 @@ class BeamCoverPlate(MomentConnection):
         else:
             self.web_shear_plate_check_status = False
             self.design_status = False
-            logger.warning(" : Block Shear of web plate is less than required fact_shear_load {} kN.".format( round(self.fact_shear_load/1000 ,2)))
+            logger.warning(" : Block Shear of web plate is less than required factored shear load {} kN.".format( round(self.fact_shear_load/1000 ,2)))
             logger.info(" : Increase the thickness of the web plate or  decrease the applied shear loads")
             logger.error(" : Design is not safe. \n ")
             logger.debug(" : =========End Of design===========")
@@ -2834,7 +2845,7 @@ class BeamCoverPlate(MomentConnection):
         #                               self.section.web_thickness * self.section.fy) / (math.sqrt(3) * gamma_m0), 2)
 
         t1 = (KEY_OUT_DISP_SHEAR_CAPACITY, '', shear_yield_prov(h=h, t=self.section.web_thickness,f_y=self.section.fy, gamma_m0=gamma_m0,
-                                                                V_dg=round(self.shear_capacity1 / 1000, 2)), '')
+                                                                V_dg=round(self.shear_capacity1 / 1000 / 0.6, 2)), '')
         self.report_check.append(t1)
 
         initial_shear_capacity = round(self.shear_capacity1 / 1000 / 0.6, 2)
@@ -3792,11 +3803,11 @@ class BeamCoverPlate(MomentConnection):
 
             t1 = (KEY_DISP_SHEARYIELDINGCAP_WEB_PLATE, '', shear_yield_prov(self.web_plate.height, self.web_plate.thickness_provided,
                                                            self.web_plate.fy, gamma_m0,
-                                                           round(self.web_plate.shear_yielding_capacity / 1000, 2),2), '')
+                                                           round(self.web_plate.shear_yielding_capacity / 1000/0.6, 2),2), '')
             self.report_check.append(t1)
 
-            initial_shear_capacity = round(self.web_plate.shear_yielding_capacity / 1000 , 2)
-            reduced_shear_capacity = round(0.6*self.web_plate.shear_yielding_capacity / 1000, 2)
+            initial_shear_capacity = round(self.web_plate.shear_yielding_capacity / 1000 /0.6, 2)
+            reduced_shear_capacity = round(self.web_plate.shear_yielding_capacity / 1000, 2)
             t1 = (KEY_DISP_ALLOW_SHEAR, display_prov(self.load.shear_force, "V"),
                   allow_shear_capacity(initial_shear_capacity, reduced_shear_capacity),
                   get_pass_fail(self.load.shear_force, reduced_shear_capacity, relation="lesser"))
@@ -3822,9 +3833,9 @@ class BeamCoverPlate(MomentConnection):
                                       round(self.web_plate.block_shear_capacity_shear/ 1000, 2)),'')
             self.report_check.append(t1)
 
-            red_shear_capacity = 0.6 * round(self.web_plate.shear_capacity_web_plate / 1000, 2)
+            red_shear_capacity =  round(self.web_plate.shear_capacity_web_plate / 1000, 2)
             t1 = (KEY_DISP_ALLOW_SHEAR,display_prov(round(self.fact_shear_load / 1000, 2), "V_u"),
-                  allow_shear_capacity(round(self.web_plate.shear_capacity_web_plate / 1000, 2), red_shear_capacity),
+                  allow_shear_capacity(round(self.web_plate.shear_capacity_web_plate / 1000/0.6, 2), round(red_shear_capacity,2)),
                   get_pass_fail(round(self.fact_shear_load / 1000, 2),
                                 round(self.web_plate.shear_capacity_web_plate / 1000, 2),relation="lesser"))
             self.report_check.append(t1)
