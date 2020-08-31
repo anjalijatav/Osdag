@@ -1,4 +1,4 @@
-Bolt.Bolt_Hole_Type: Standard
+Bolt.Bolt_Hole_Type: Over-sized
 Bolt.Diameter:
 - '12'
 - '16'
@@ -25,7 +25,6 @@ Bolt.Grade:
 - '9.8'
 - '10.9'
 - '12.9'
-Bolt.Material_Grade_OverWrite: '410'
 Bolt.Slip_Factor: '0.3'
 Bolt.TensionType: Pretensioned
 Bolt.Type: Friction Grip Bolt
@@ -56,8 +55,8 @@ Connector.Flange_Plate.Thickness_list: &id001
 Connector.Material: E 250 (Fe 410 W)A
 Connector.Web_Plate.Thickness_List: *id001
 Design.Design_Method: Limit State Design
-Detailing.Corrosive_Influences: 'No'
-Detailing.Edge_type: Sheared or hand flame cut
+Detailing.Corrosive_Influences: 'Yes'
+Detailing.Edge_type: Rolled, machine-flame cut, sawn and planed
 Detailing.Gap: '3'
 Load.Axial: '100'
 Load.Moment: '20'
@@ -66,11 +65,3 @@ Material: E 250 (Fe 410 W)A
 Member.Designation: PBP 400 X 158.1
 Member.Material: E 250 (Fe 410 W)A
 Module: Column Coverplate Connection
-out_titles_status:
-- 1
-- 1
-- 1
-- 1
-- 1
-- 1
-- 0
