@@ -241,9 +241,12 @@ class Bolt:
             self.bolt_tension_capacity = IS800_2007.cl_10_4_5_friction_bolt_tension_resistance(
                 f_ub=self.bolt_fu, f_yb=self.bolt_fy, A_sb=self.bolt_shank_area, A_n=self.bolt_net_area)
 
-    def calculate_bolt_spacing_limits(self, bolt_diameter_provided, conn_plates_t_fu_fy):
+    def calculate_bolt_spacing_limits(self, bolt_diameter_provided, conn_plates_t_fu_fy,n=1):
+        self.single_conn_plates_t_fu_fy = []
+        self.single_conn_plates_t_fu_fy.append(tuple([list(conn_plates_t_fu_fy[0])[0]/n,conn_plates_t_fu_fy[0][1],conn_plates_t_fu_fy[0][2]]))
+        self.single_conn_plates_t_fu_fy.append(conn_plates_t_fu_fy[1])
+        self.connecting_plates_tk = [i[0] for i in self.single_conn_plates_t_fu_fy]
 
-        self.connecting_plates_tk = [i[0] for i in conn_plates_t_fu_fy]
         self.bolt_diameter_provided = bolt_diameter_provided
 
         self.min_pitch = round(IS800_2007.cl_10_2_2_min_spacing(self.bolt_diameter_provided), 2)
@@ -253,7 +256,7 @@ class Bolt:
                                                      self.edge_type), 2)
         self.min_end_dist = self.min_edge_dist
         self.max_spacing = round(IS800_2007.cl_10_2_3_1_max_spacing(self.connecting_plates_tk), 2)
-        self.max_edge_dist = round(IS800_2007.cl_10_2_4_3_max_edge_dist(conn_plates_t_fu_fy,
+        self.max_edge_dist = round(IS800_2007.cl_10_2_4_3_max_edge_dist(self.single_conn_plates_t_fu_fy,
                                                                         self.corrosive_influences), 2)
 
         self.max_end_dist = self.max_edge_dist
@@ -281,7 +284,7 @@ class Nut(Material):
 
 class Weld:
 
-    def __init__(self, material_g_o="", type=KEY_DP_WELD_TYPE_FILLET, fabrication= KEY_DP_WELD_FAB_SHOP):
+    def __init__(self, material_g_o="", type=KEY_DP_WELD_TYPE_FILLET, fabrication= KEY_DP_FAB_SHOP):
         self.design_status = True
         self.type = type
         self.fabrication = fabrication
@@ -792,7 +795,10 @@ class Plate(Material):
             self.get_web_plate_l_bolts_one_line(web_plate_h_max, web_plate_h_min, bolts_required
                                                 , min_edge_dist, min_gauge, min_bolts_one_line, min_bolt_line)
         count = 0
-
+        if min_end_dist == 0.0:
+            end_dist = min_edge_dist
+        else:
+            end_dist = min_end_dist
         if bolts_one_line < min_bolts_one_line:
             self.design_status = False
             self.bolt_line = min_bolt_line
@@ -801,8 +807,8 @@ class Plate(Material):
             self.pitch_provided = min_gauge
             self.gauge_provided = min_gauge
             self.edge_dist_provided = min_edge_dist
-            self.end_dist_provided = min_edge_dist
-            self.length = gap + self.edge_dist_provided * 2 + self.gauge_provided * (self.bolt_line - 1)
+            self.end_dist_provided = end_dist
+            self.length = gap + self.end_dist_provided * 2 + self.pitch_provided * (self.bolt_line - 1)
             self.height = self.get_web_plate_h_req(self.bolts_one_line, self.gauge_provided , self.edge_dist_provided)
             self.reason = "Can't fit two bolts in one line. Select lower diameter."
         elif bolt_line < min_bolt_line:
@@ -811,6 +817,12 @@ class Plate(Material):
         elif bolt_line > bolt_line_limit:
             self.design_status = False
             self.reason = "Bolt line limit is reached. Select higher grade/Diameter or choose different connection."
+        elif min_edge_dist > max_edge_dist:
+            self.design_status = False
+            self.reason = "Minimum end/edge distance is greater than max end/edge distance."
+        elif min_gauge > max_spacing:
+            self.design_status = False
+            self.reason = "Minimum pitch/gauge distance is greater than max pitch/gauge distance."
         else:
             [gauge, edge_dist, web_plate_h] = self.get_gauge_edge_dist(web_plate_h, bolts_one_line, min_edge_dist,
                                                                        max_spacing, max_edge_dist,count=0)
@@ -820,10 +832,7 @@ class Plate(Material):
                 pitch = min_pitch
             else:
                 pitch = min_gauge
-            if min_end_dist ==0.0:
-                end_dist = min_edge_dist
-            else:
-                end_dist = min_end_dist
+
 
             if shear_ecc is True:
                 # If check for shear eccentricity is true, resultant force in bolt is calculated
@@ -1075,6 +1084,7 @@ class Plate(Material):
         Avn = thk * ((numrow - 1) * gauge + edge_dist - (numrow - 0.5) * dia_hole)
         Atg = thk * (pitch * (numcol - 1) + end_dist)
         Atn = thk * (pitch * (numcol - 1) + end_dist - (numcol - 0.5) * dia_hole)
+
         Tdb1 = (Avg * fy / (math.sqrt(3) * 1.1) + 0.9 * Atn * fu / 1.25)
         Tdb2 = (0.9 * Avn * fu / (math.sqrt(3) * 1.25) + Atg * fy / 1.1)
         Tdb = min(Tdb1, Tdb2)
@@ -1168,6 +1178,23 @@ class Plate(Material):
 
     def get_moment_cacacity(self, fy, plate_tk, plate_len):
         self.moment_capacity = 1.2 * (fy / 1.1) * (plate_tk * plate_len ** 2) / 6
+
+    def cleat_angle_check(self, h, t, nr, nc, p, en, g, ed, dh, fu, fy, m_d, h_max, v, n=2):
+        self.design_status = False
+        self.cleat_shear_capacity = IS800_2007.cl_8_4_design_shear_strength(n*h*t, fy)
+        self.cleat_moment_capacity = IS800_2007.cl_8_2_1_2_design_moment_strength(n*t*h*h/6, n*t*h*h/4, fy, 'plastic')
+        self.blockshear(nr, nc, g, p, n*t, ed, en, dh, fy, fu)
+        while (self.cleat_shear_capacity < v or self.block_shear_capacity < v or self.cleat_moment_capacity < m_d) and h_max-h >= 10:
+            h += 10
+            ed += 5
+            self.cleat_shear_capacity = IS800_2007.cl_8_4_design_shear_strength(n*h*t, fy)
+            self.cleat_moment_capacity = IS800_2007.cl_8_2_1_2_design_moment_strength(n*t*h*h/6, n*t*h*h/4, fy, 'plastic')
+            self.blockshear(nr, nc, g, p, n*t, ed, en, dh, fy, fu)
+        self.height = h
+        if self.cleat_shear_capacity < v or self.block_shear_capacity < v or self.cleat_moment_capacity < m_d:
+            self.design_status = False
+        else:
+            self.design_status = True
 
     def __repr__(self):
         repr = "Plate\n"
@@ -2075,6 +2102,7 @@ class HollowSection(Material):
         self.plast_sec_mod_y = row[14] * 1000  # mm^3
         self.root_radius = 0.0
         self.toe_radius = 0.0
+        self.flange_slope = 'N/A'
         self.source = row[15]  # IS 4923:1997
         conn.close()
 
@@ -2117,6 +2145,7 @@ class CHS(Material):
         self.mom_inertia = row[10]  # cm^4/m
         self.elast_sec_mod = row[11] * 1000  # mm^3
         self.rad_of_gy = row[12] * 10  # mm
+        self.flange_slope = 'N/A'
         self.source = row[14]  # IS 1161:2014
 
         conn.close()

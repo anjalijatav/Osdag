@@ -66,7 +66,6 @@ class Window(QDialog):
                                      QMessageBox.Cancel)
             popup.setDefaultButton(QMessageBox.Cancel)
             answer = popup.exec_()
-            print(answer, "answer")
             if answer == QMessageBox.Yes:
                 self.accept()
                 event.accept()
@@ -253,7 +252,7 @@ class Window(QDialog):
                         img.setObjectName(element[0])
                         grid.addWidget(img,r,1,10,2)
                         pmap = QPixmap(element[4])
-                        img.setPixmap(pmap.scaled(scale*300,scale*300,Qt.KeepAspectRatio, Qt.FastTransformation)) # you can also use IgnoreAspectRatio
+                        img.setPixmap(pmap.scaled(300,300,Qt.KeepAspectRatio, Qt.FastTransformation)) # you can also use IgnoreAspectRatio
                         r += 10
 
                     if type == TYPE_BREAK:
@@ -323,8 +322,10 @@ class Window(QDialog):
                         if element[0] in [KEY_DP_BOLT_MATERIAL_G_O, KEY_DP_WELD_MATERIAL_G_O]:
                             line.setValidator(dbl_validator)
                             line.setMaxLength(7)
-                        if element[0] in [KEY_BASE_PLATE_FU, KEY_BASE_PLATE_FY, KEY_DP_ANCHOR_BOLT_DESIGNATION,
-                                          KEY_DP_ANCHOR_BOLT_MATERIAL_G_O]:
+                        if element[0] in [KEY_BASE_PLATE_FU, KEY_BASE_PLATE_FY, KEY_DP_ANCHOR_BOLT_DESIGNATION_OCF,
+                                          KEY_DP_ANCHOR_BOLT_DESIGNATION_ICF, KEY_DP_ANCHOR_BOLT_MATERIAL_G_O_OCF,
+                                          KEY_DP_ANCHOR_BOLT_MATERIAL_G_O_ICF, KEY_DP_ANCHOR_BOLT_TYPE_OCF,
+                                          KEY_DP_ANCHOR_BOLT_TYPE_ICF]:
                             line.setReadOnly(True)
                         if input_dictionary:
                             line.setText(str(element[4]))
@@ -1402,7 +1403,7 @@ class DesignPreferences():
         width = resolution.width()
         height = resolution.height()
         # self.ui.resize(width*(0.67),height*(0.60))
-        self.ui.resize(width * 0.6, height * 0.6)
+        self.ui.resize(width * 0.7, height * 0.6)
         # self.ui.center()
         # self.ui.tabWidget.resize(width * (0.67), height * (0.60))
         self.ui.setWindowFlag(Qt.WindowMinimizeButtonHint, True)

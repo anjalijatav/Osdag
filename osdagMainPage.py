@@ -225,7 +225,7 @@ class ModulePage(QWidget):              # Empty Page with a layout
         super().__init__()
         self.layout=QGridLayout()
         self.setLayout(self.layout)
-        self.layout.setContentsMargins(80,0,0,0)
+        self.layout.setContentsMargins(0,0,0,0)
 
 class LeftPanelButton(QWidget):          # Custom Button widget for the Left Panel
     def __init__(self,text):
@@ -416,6 +416,7 @@ class OsdagMainWindow(QMainWindow):
     def current_changed(self, index):
         l = list(self.Modules.keys())
         items = list(self.ui.verticalLayout.itemAt(i) for i in range(self.ui.verticalLayout.count()))
+        # print(items,"hfhh")
         for item in range(len(items)):
             if item == index-1:
                 items[item].widget().ui.LP_Button.setStyleSheet('''
@@ -788,6 +789,9 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
 
 
 if __name__ == '__main__':
+    # from cad.common_logic import CommonDesignLogic
+    from multiprocessing import Pool
+    import multiprocessing
 
     # app = QApplication(sys.argv)
     # screen = app.screens()[0]
@@ -804,7 +808,14 @@ if __name__ == '__main__':
     app.setStyle('Fusion')
 
     # path = os.path.join(os.path.dirname(__file__), 'ResourceFiles', 'images', 'Osdag.png')
-    window = OsdagMainWindow()
+    print(multiprocessing.cpu_count())
+    pool = Pool()
+    try:
+        result = pool.apply_async(OsdagMainWindow())
+    finally:
+        pool.terminate()
+    # window = OsdagMainWindow()
+
     # trayIcon = SystemTrayIcon(QtGui.QIcon(path), window)
 
     ############################     Exception Dialog and Error Reporting  ###################
